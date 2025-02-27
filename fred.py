@@ -3,6 +3,7 @@
 # A variety of methods support the workflow.
 
 # Import required resources.
+import datetime
 import time
 
 # This is the base class for FRED time series
@@ -16,7 +17,9 @@ class FREDSeries:
         self.pds_name = str(name)
         self.pds_code = str(code)
         self.pds_verbosity = verbosity
-        self.pds_fetch_timestamp = None
+        self.pds_first_fetch = None
+        self.pds_last_fetch = None
+        self.pds_fetch_tally = 0
 
     def code(self):
         return self.pds_code
@@ -35,7 +38,10 @@ class FREDSeries:
             print(fred_series_no_nan.head())
             print(fred_series_no_nan.tail())
         # Return non-NaN of None and update fetch timestamp.
-        self.pds_fetch_timestamp = time.time()
+        if self.pds_first_fetch is None:
+            self.pds_first_fetch = time.time()
+        self.pds_last_fetch = time.time()
+        self.pds_fetch_tally += 1
         if fred_series_no_nan.size > 0:
             return fred_series_no_nan
         else:
@@ -52,8 +58,11 @@ class FREDSeries:
               "Code:", self.code(),
               "Kind:", self.kind(),
               "Title:", self.title(),
-              "Fetch Timestamp:", self.pds_fetch_timestamp,
               "Verbosity:", self.verbosity())
+        print("First Fetch:", self.pds_first_fetch,
+              "Last Fetch:", self.pds_last_fetch,
+              "Fetch Tally:", self.pds_fetch_tally,
+              "Wait:", self.wait())
 
     def title(self):
         return self.pds_title
@@ -62,3 +71,12 @@ class FREDSeries:
         if v is not None:
             self.pds_verbosity = v
         return self.pds_verbosity
+
+    def wait(self):
+        if self.pds_last_fetch is not None:
+            fetch_datetime = datetime.datetime.fromtimestamp(self.pds_last_fetch)
+            current_datetime = datetime.datetime.fromtimestamp(time.time())
+            time_diff = current_datetime - fetch_datetime
+            return time_diff.days
+        else:
+            return None
