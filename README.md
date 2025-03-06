@@ -41,13 +41,13 @@ pip install -r requirements.txt
 
 ### 3. Configure FRED Series
 1. Navigate to the `config/` directory.
-2. Open or create a `fredfloe_series.csv` file and add the following content:
+2. Open or create a `fredflow_series.csv` file and add the following content:
    ```csv
    code,name,granularity
    GDP,"Gross Domestic Product",QUARTERLY
    ```
    
-### 4. Configure Databases (Oracle)
+### 4. Configure Database Connections (Oracle)
 1. Navigate to the `config/` directory.
 2. Open or create an `oracle_db.csv` file and add the following content:
    ```csv
