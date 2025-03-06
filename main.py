@@ -14,42 +14,32 @@
 # Copyright 2025 - Present by University of South Florida (USF)
 
 # Import required resources.
-import csv
 import pickle
 import os
+from config import *
 from fred import *
-from fredapi import Fred
+from orcldb import *
 
 # Set basic parameters like debug verbosity level.
 verbosity = 3
 sleep_secs = 6
+config_path = 'config/'
 pickle_path = 'pickle/'
+oracle_db_enabled = True
 
-# Read config file for FRED API key.
 if verbosity > 0:
     print("\nInitializing FREDflow ...")
-with open('config/config.csv', 'r') as file:
-    csvreader = csv.reader(file)
-    for row in csvreader:
-        if row[0] == 'api_key':
-            fredapi_key = row[1]
-fred = Fred(api_key = fredapi_key)
-
-# Create a dictionary of the target FRED series,
-# including code and name (add new series here).
-if verbosity > 0:
-    print("\nCreating dictionary of FRED series ...")
-fred_dict = {
-    "CPIENGSL": "Energy in US City Average",
-    "DFF": "Federal Funds Effective Rate",
-    "GDP": "Gross Domestic Product",
-    "GFDEBTN": "Total Public Debt",
-    "CORESTICKM159SFRBATL": "Sticky CPI",
-    "UNRATE": "Unemployment Rate"}
+# Initialise FRED API key.
+fred = config_fred_api(config_path, verbosity)
+# Create a dictionary of FRED series with code and name.
+fred_dict = config_fred_series(config_path, verbosity)
 fred_codes = set(fred_dict.keys())
+# Create a dictionary of FRED series granularity.
+granularity_dict = config_fred_granularity(config_path, verbosity)
 if verbosity > 1:
     print(fred_dict)
     print(fred_codes)
+    print(granularity_dict)
 
 # Read pickled FRED series objects.
 if verbosity > 0:
@@ -78,12 +68,26 @@ if verbosity > 0:
 fred_series = pickled_series
 for fs_code in list(fred_codes - pickled_codes):
     print(fs_code, fred_dict[fs_code])
-    fred_series.append(FREDSeries(fred_dict[fs_code], fs_code))
+    fred_series.append(FREDSeries(fred_dict[fs_code],
+                                  fs_code,
+                                  granularity_dict[fs_code]))
 if verbosity > 1:
     for fs in fred_series:
         fs.show()
 
-# Fetch the data from the FRED API.
+# Establish database connections, if enabled.
+# The FRED data could be downloaded for computations
+# and not persistent storage.
+if oracle_db_enabled:
+    oracle_db_list = config_oracle_databases(config_path, verbosity)
+    if verbosity > 1:
+        for odb in oracle_db_list:
+            odb.show()
+else:
+    oracle_db_list = []
+
+# Fetch the data from the FRED API and
+# push to one or more databases.
 print("\nFetching FRED series ...")
 for fs in fred_series:
     try:
@@ -93,11 +97,17 @@ for fs in fred_series:
         ds = None
     if ds is not None:
         if verbosity > 2:
-            print(fs.name(), "-", fs.code())
+            print("\nFRED Series:", fs.name(), "-", fs.code())
+            print("Length:", len(ds))
+            print("Head:")
             print(ds.head())
+            print("Tail:")
             print(ds.tail())
         # Pickle the FRED series for persistence.
         with open('pickle/' + fs.code() + '.pkl', 'wb') as pkl_file:
             pickle.dump(fs, pkl_file)
+        # Push via UPSERT operations to the specified database.
+        # Push to specified Oracle databases.
+        for odb in oracle_db_list:
+            odb.upsert(fs, ds)
     time.sleep(sleep_secs)
-

@@ -13,10 +13,11 @@ class FREDSeries:
     pds_kind = 'PDS'
     pds_title = 'Pandas Series'
 
-    def __init__(self, name, code, verbosity = 0):
+    def __init__(self, name, code, granularity, verbosity = 0):
         self.pds_name = str(name)
         self.pds_code = str(code)
-        self.pds_verbosity = verbosity
+        self.pds_granularity = str(granularity)
+        self.pds_verbosity = int(verbosity)
         self.pds_first_fetch = None
         self.pds_last_fetch = None
         self.pds_fetch_tally = 0
@@ -47,6 +48,9 @@ class FREDSeries:
         else:
             return None
 
+    def granularity(self):
+        return self.pds_granularity
+
     def kind(self):
         return self.pds_kind
 
@@ -56,6 +60,7 @@ class FREDSeries:
     def show(self):
         print("Name:", self.name(),
               "Code:", self.code(),
+              "Granularity", self.granularity(),
               "Kind:", self.kind(),
               "Title:", self.title(),
               "Verbosity:", self.verbosity())
@@ -67,11 +72,13 @@ class FREDSeries:
     def title(self):
         return self.pds_title
 
-    def verbosity(self, v=None):
+    def verbosity(self, v = None):
         if v is not None:
             self.pds_verbosity = v
         return self.pds_verbosity
 
+    # Return the elapsed days since the last fetch as
+    # the length of the waiting period.
     def wait(self):
         if self.pds_last_fetch is not None:
             fetch_datetime = datetime.datetime.fromtimestamp(self.pds_last_fetch)
