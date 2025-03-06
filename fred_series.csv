@@ -1,7 +1,0 @@
-code,name,granularity
-CPIENGSL, "Energy in US City Average",MONTHLY
-DFF,"Federal Funds Effective Rate",DAILY
-GDP,"Gross Domestic Product",QUARTERLY
-GFDEBTN,"Total Public Debt",QUARTERLY
-CORESTICKM159SFRBATL,"Sticky CPI",MONTHLY
-UNRATE,"Unemployment Rate",MONTHLY
