@@ -33,13 +33,28 @@ pip install -r requirements.txt
 
 #### Configure the API Key
 1. Navigate to the `config/` directory.
-2. Open or create a `config.csv` file and add the following content:
+2. Open or create a `fredfloe_config.csv` file and add the following content:
    ```csv
    key,value
-   api_key,your_api_key_here
+   api_key,<your_api_key_here>
    ```
 
-### 3. Run the Script
+### 3. Configure FRED Series
+1. Navigate to the `config/` directory.
+2. Open or create a `fredfloe_series.csv` file and add the following content:
+   ```csv
+   code,name,granularity
+   GDP,"Gross Domestic Product",QUARTERLY
+   ```
+   
+### 4. Configure Databases (Oracle)
+1. Navigate to the `config/` directory.
+2. Open or create an `oracle_db.csv` file and add the following content:
+   ```csv
+   user,password,host,port,sid,name
+   ```
+   
+### 5. Run the Script
 Execute the main script to fetch and process FRED data:
 ```bash
 python main.py
