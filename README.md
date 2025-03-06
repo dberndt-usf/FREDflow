@@ -53,7 +53,10 @@ pip install -r requirements.txt
    ```csv
    user,password,host,port,sid,name
    ```
-   
+Note: Set the `oracle_db_enabled` parameter in the `main.py` file to False to
+jusf fetch the data and skip database processing.
+
+
 ### 5. Run the Script
 Execute the main script to fetch and process FRED data:
 ```bash
