@@ -1,6 +1,7 @@
 # Import required resources.
 import csv
 from fredapi import Fred
+from fred import *
 from orcldb import *
 
 def config_fred_api(config_path, verbosity):
@@ -18,7 +19,7 @@ def config_fred_api(config_path, verbosity):
 
 
 
-def config_fred_series(config_path, verbosity):
+def config_fred_dict(config_path, verbosity):
     # Read config file for FRED series code and name
     # and return a dictionary.
     fred_dict = {}
@@ -34,19 +35,23 @@ def config_fred_series(config_path, verbosity):
 
 
 
-def config_fred_granularity(config_path, verbosity):
+def config_fred_series(config_path, new_codes, verbosity):
     # Read config file for FRED series granularity
     # and return a dictionary.
-    granularity_dict = {}
+    new_series = []
     if verbosity > 0:
-        print("\nConfiguring FRED granularity dictionary ...")
+        print("\nConfiguring new FRED series ...")
     with open(config_path + 'fred_series.csv', 'r') as file:
         csvreader = csv.reader(file)
         # Skip headers on first line.
         next(csvreader)
         for row in csvreader:
-            granularity_dict[row[0]] = row[2]
-    return granularity_dict
+            if row[0] in new_codes:
+                new_series.append(FREDSeries(row[0], # Code
+                                             row[1], # Name
+                                             row[2], # Granularity
+                                             row[3])) # Lookback
+    return new_series
 
 
 

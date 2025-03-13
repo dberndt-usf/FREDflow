@@ -16,6 +16,27 @@ class OracleDB:
         self.odb_name = str(name)
         self.odb_verbosity = int(verbosity)
 
+    def bookmark(self, fred_series):
+        if self.verbosity() > 0:
+            print("Fetching", fred_series.code(), "DB bookmark ...")
+        max_release_date = None
+        with oracledb.connect(
+                user=self.odb_user,
+                password=self.odb_password,
+                host=self.odb_host,
+                port=self.odb_port,
+                service_name=self.odb_name) as connection:
+            # SELECT the maximum release data as a bookmark.
+            sql_stmt = \
+                "SELECT MAX(release_date) FROM " + fred_series.code()
+            with connection.cursor() as cursor:
+                cursor.execute(sql_stmt)
+                # Fetch the single row from the result set.
+                row = cursor.fetchone()
+                if row:
+                    max_release_date = row  # Unpack the tuple into variables.
+        return max_release_date[0]
+
     def connection(self):
         oracle_conn = oracledb.connect(
             user = self.odb_user,
@@ -25,6 +46,27 @@ class OracleDB:
             service_name  = self.odb_name)
         return oracle_conn
 
+    def count(self, fred_series):
+        if self.verbosity() > 0:
+            print("Fetching", fred_series.code(), "DB row count ...")
+        row_count = None
+        with oracledb.connect(
+                user=self.odb_user,
+                password=self.odb_password,
+                host=self.odb_host,
+                port=self.odb_port,
+                service_name=self.odb_name) as connection:
+            # SELECT the maximum release data as a bookmark.
+            sql_stmt = \
+                "SELECT COUNT(*) FROM " + fred_series.code()
+            with connection.cursor() as cursor:
+                cursor.execute(sql_stmt)
+                # Fetch the single row from the result set.
+                row = cursor.fetchone()
+                if row:
+                    row_count = row  # Unpack the tuple into variables.
+        return row_count[0]
+
     def host(self):
         return self.odb_host
 
@@ -33,6 +75,29 @@ class OracleDB:
 
     def name(self):
         return self.odb_name
+
+    def ping(self):
+        if self.verbosity() > 0:
+            print("Pinging database server", self.host(), "...")
+        response = False
+        with oracledb.connect(
+                user=self.odb_user,
+                password=self.odb_password,
+                host=self.odb_host,
+                port=self.odb_port,
+                service_name=self.odb_name) as connection:
+            # SELECT the maximum release data as a bookmark.
+            sql_stmt = "SELECT * FROM dual"
+            with connection.cursor() as cursor:
+                cursor.execute(sql_stmt)
+                # Fetch the single row from the result set.
+                row = cursor.fetchone()
+                if row:
+                    dummy = row  # Unpack the tuple into variables.
+                    # Check for Oracle dummy attribute default of X.
+                    if dummy[0] == 'X':
+                        response = True
+        return response
 
     def port(self):
         return self.odb_port
@@ -67,11 +132,12 @@ class OracleDB:
             sql_stmt1 = \
                 "INSERT INTO fredflow_logs (fred_series, row_tally) " + \
                 "VALUES (:1, :2)"
-            sql_data = [fred_series.code(), 0]
+            sql_data1 = [fred_series.code(), 0]
             with connection.cursor() as cursor:
-                cursor.execute(sql_stmt1, sql_data)
+                cursor.execute(sql_stmt1, sql_data1)
                 connection.commit()
             # Process the pandas series row-by-row.
+            row_tally = 0
             for pds_tstamp, pds_val in pandas_series.items():
                 # Convert timestamp to a date string.
                 pds_date = str(pds_tstamp)[0:10]
@@ -102,6 +168,7 @@ class OracleDB:
                               " unknown.")
                     # Check return value and commit if successful.
                     if ret_val > 0:
+                        row_tally += 1
                         connection.commit()
                     else:
                         print("WARNING: UPSERT for ",
@@ -109,10 +176,13 @@ class OracleDB:
             # UPDATE FREDflow log with stop time.
             sql_stmt2 = \
                 "UPDATE fredflow_logs SET " + \
+                "row_tally = :1, "  + \
                 "stop_tstamp = SYSTIMESTAMP " + \
-                "WHERE stop_tstamp IS NULL"
+                "WHERE fred_series = :2 " + \
+                "AND stop_tstamp IS NULL"
+            sql_data2 = [row_tally, fred_series.code()]
             with connection.cursor() as cursor:
-                cursor.execute(sql_stmt2)
+                cursor.execute(sql_stmt2, sql_data2)
                 connection.commit()
 
     def user(self):

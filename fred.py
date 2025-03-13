@@ -13,10 +13,11 @@ class FREDSeries:
     pds_kind = 'PDS'
     pds_title = 'Pandas Series'
 
-    def __init__(self, name, code, granularity, verbosity = 0):
-        self.pds_name = str(name)
+    def __init__(self, code, name, granularity, lookback = 0, verbosity = 0):
         self.pds_code = str(code)
+        self.pds_name = str(name)
         self.pds_granularity = str(granularity)
+        self.pds_lookback = int(lookback)
         self.pds_verbosity = int(verbosity)
         self.pds_first_fetch = None
         self.pds_last_fetch = None
@@ -53,6 +54,9 @@ class FREDSeries:
 
     def kind(self):
         return self.pds_kind
+
+    def lookback(self):
+        return self.pds_lookback
 
     def name(self):
         return self.pds_name

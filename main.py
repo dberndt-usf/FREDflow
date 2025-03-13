@@ -14,11 +14,11 @@
 # Copyright 2025 - Present by University of South Florida (USF)
 
 # Import required resources.
+import pandas as pd
 import pickle
 import os
 from config import *
 from fred import *
-from orcldb import *
 
 # Set basic parameters like debug verbosity level.
 verbosity = 3
@@ -26,20 +26,21 @@ sleep_secs = 6
 config_path = 'config/'
 pickle_path = 'pickle/'
 oracle_db_enabled = True
+db_push_enabled = True
+# Temporarily omit some series such as ['DFF']
+skip_list =[]
 
 if verbosity > 0:
     print("\nInitializing FREDflow ...")
 # Initialise FRED API key.
 fred = config_fred_api(config_path, verbosity)
 # Create a dictionary of FRED series with code and name.
-fred_dict = config_fred_series(config_path, verbosity)
+fred_dict = config_fred_dict(config_path, verbosity)
 fred_codes = set(fred_dict.keys())
-# Create a dictionary of FRED series granularity.
-granularity_dict = config_fred_granularity(config_path, verbosity)
 if verbosity > 1:
     print(fred_dict)
     print(fred_codes)
-    print(granularity_dict)
+    print(skip_list)
 
 # Read pickled FRED series objects.
 if verbosity > 0:
@@ -65,12 +66,10 @@ if verbosity > 0:
     else:
         print("No new FRED series.")
 # Instantiate the newly added series after loading pickled series.
-fred_series = pickled_series
-for fs_code in list(fred_codes - pickled_codes):
-    print(fs_code, fred_dict[fs_code])
-    fred_series.append(FREDSeries(fred_dict[fs_code],
-                                  fs_code,
-                                  granularity_dict[fs_code]))
+new_series = config_fred_series(config_path,
+                                fred_codes - pickled_codes,
+                                verbosity)
+fred_series = pickled_series + new_series
 if verbosity > 1:
     for fs in fred_series:
         fs.show()
@@ -80,16 +79,25 @@ if verbosity > 1:
 # and not persistent storage.
 if oracle_db_enabled:
     oracle_db_list = config_oracle_databases(config_path, verbosity)
-    if verbosity > 1:
+    if verbosity > 2:
         for odb in oracle_db_list:
             odb.show()
 else:
     oracle_db_list = []
+if verbosity > 1:
+    for odb in oracle_db_list:
+        if odb.ping():
+            print("Database server", odb.host(), "up and running ...")
+        else:
+            print("Database server", odb.host(), "down and unreachable ...")
 
 # Fetch the data from the FRED API and
 # push to one or more databases.
 print("\nFetching FRED series ...")
 for fs in fred_series:
+    # Skip some series for development work.
+    if fs.code() in skip_list:
+        break
     try:
         ds = fs.fetch(fred)
     except Exception as e:
@@ -108,6 +116,14 @@ for fs in fred_series:
             pickle.dump(fs, pkl_file)
         # Push via UPSERT operations to the specified database.
         # Push to specified Oracle databases.
-        for odb in oracle_db_list:
-            odb.upsert(fs, ds)
+        if db_push_enabled:
+            for odb in oracle_db_list:
+                # Process only the required data using a bookmark.
+                bmark = odb.bookmark(fs)
+                if bmark is not None:
+                    adjusted_bmark = bmark - pd.Timedelta(days=fs.lookback())
+                    print("Bookmarks:", bmark, adjusted_bmark)
+                    odb.upsert(fs, ds[adjusted_bmark:])
+                else:
+                    odb.upsert(fs, ds)
     time.sleep(sleep_secs)
