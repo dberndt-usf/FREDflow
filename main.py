@@ -24,6 +24,7 @@ from fred import *
 verbosity = 3
 sleep_secs = 6
 config_path = 'config/'
+data_path = 'data/'
 pickle_path = 'pickle/'
 oracle_db_enabled = True
 db_push_enabled = True
@@ -42,14 +43,14 @@ if verbosity > 1:
     print(fred_codes)
     print(skip_list)
 
-# Read pickled FRED series objects.
+# Read pickled FRED series objects that keep state.
 if verbosity > 0:
     print("\nLoading pickled FRED series ...")
 pickled_series = []
 pickled_codes = set()
 files = os.listdir(pickle_path)
 for file in files:
-    if file!= ".gitkeep" and os.path.isfile(os.path.join(pickle_path, file)):
+    if os.path.isfile(os.path.join(pickle_path, file)):
         with open(os.path.join(pickle_path, file), 'rb') as f:
             pfs = pickle.load(f)
             pickled_series.append(pfs)
@@ -58,18 +59,21 @@ if verbosity > 1:
     print(pickled_codes)
     print(pickled_series)
 
-# Instantiate FRED series objects.
+# Instantiate new FRED series objects.
 if verbosity > 0:
     print("\nInstantiating new FRED series ...")
     if len(fred_codes - pickled_codes) > 0:
         print(fred_codes - pickled_codes)
     else:
         print("No new FRED series.")
-# Instantiate the newly added series after loading pickled series.
-new_series = config_fred_series(config_path,
-                                fred_codes - pickled_codes,
-                                verbosity)
-fred_series = pickled_series + new_series
+# Instantiate any newly added series after loading pickled series.
+if len(fred_codes - pickled_codes) > 0:
+    new_series = config_fred_series(config_path,
+                                    fred_codes - pickled_codes,
+                                    verbosity)
+    fred_series = pickled_series + new_series
+else:
+    fred_series = pickled_series
 if verbosity > 1:
     for fs in fred_series:
         fs.show()
@@ -114,6 +118,8 @@ for fs in fred_series:
         # Pickle the FRED series for persistence.
         with open('pickle/' + fs.code() + '.pkl', 'wb') as pkl_file:
             pickle.dump(fs, pkl_file)
+        # Write series data to CSV file.
+        ds.to_csv(data_path + fs.code() + '.csv')
         # Push via UPSERT operations to the specified database.
         # Push to specified Oracle databases.
         if db_push_enabled:

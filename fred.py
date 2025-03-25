@@ -23,10 +23,11 @@ class FREDSeries:
         self.pds_last_fetch = None
         self.pds_fetch_tally = 0
 
+    # Returns the code for the FRED series indicator.
     def code(self):
         return self.pds_code
 
-    # Fetch the FRED data and return the series.
+    # Fetches the FRED data and returns the Pandas series.
     def fetch(self, fred):
         if self.verbosity() > 0:
             print("Fetching", self.name(), "data ...")
@@ -39,7 +40,7 @@ class FREDSeries:
         if self.verbosity() > 2:
             print(fred_series_no_nan.head())
             print(fred_series_no_nan.tail())
-        # Return non-NaN of None and update fetch timestamp.
+        # Return non-NaN or None and update fetch timestamps.
         if self.pds_first_fetch is None:
             self.pds_first_fetch = time.time()
         self.pds_last_fetch = time.time()
@@ -49,18 +50,25 @@ class FREDSeries:
         else:
             return None
 
+    # Returns the granularity of the FRED series (DAILY, MONTHLY or QUARTERLY).
     def granularity(self):
         return self.pds_granularity
 
+    # Returns the kind of object instantiated.
     def kind(self):
         return self.pds_kind
 
+    # Returns the "look back" window to be used for data that might be
+    # revised by different sources.
     def lookback(self):
         return self.pds_lookback
 
+    # Return the more descriptive name of the FRED series.
     def name(self):
         return self.pds_name
 
+    # Show some basic information about the FRED series,
+    # typically used for debugging.
     def show(self):
         print("Name:", self.name(),
               "Code:", self.code(),
@@ -73,9 +81,11 @@ class FREDSeries:
               "Fetch Tally:", self.pds_fetch_tally,
               "Wait:", self.wait())
 
+    # Return the more descriptive title for the instantiated object.
     def title(self):
         return self.pds_title
 
+    # Return and optionally set the verbosity level for the object.
     def verbosity(self, v = None):
         if v is not None:
             self.pds_verbosity = v

@@ -16,6 +16,8 @@ class OracleDB:
         self.odb_name = str(name)
         self.odb_verbosity = int(verbosity)
 
+    # Returns the bookmark data for a given FRED series,
+    # providing a place to begin UPSERTs for new data.
     def bookmark(self, fred_series):
         if self.verbosity() > 0:
             print("Fetching", fred_series.code(), "DB bookmark ...")
@@ -37,6 +39,7 @@ class OracleDB:
                     max_release_date = row  # Unpack the tuple into variables.
         return max_release_date[0]
 
+    # Establishes and returns an Oracle database connection.
     def connection(self):
         oracle_conn = oracledb.connect(
             user = self.odb_user,
@@ -46,6 +49,8 @@ class OracleDB:
             service_name  = self.odb_name)
         return oracle_conn
 
+    # Returns a row count for the specified FRED series
+    # for use in workflow management and dashboards.
     def count(self, fred_series):
         if self.verbosity() > 0:
             print("Fetching", fred_series.code(), "DB row count ...")
@@ -67,15 +72,21 @@ class OracleDB:
                     row_count = row  # Unpack the tuple into variables.
         return row_count[0]
 
+    # Returns the host name being used for the database connection.
     def host(self):
         return self.odb_host
 
+    # Returns the kind of object instantiated.
     def kind(self):
         return self.odb_kind
 
+    # Returns the service name being used for the database connection.
     def name(self):
         return self.odb_name
 
+    # Pings the database as status check and returns True
+    # if the database is up and running.
+    # A basic Oracle query (SELECT * FROM dual) is used.
     def ping(self):
         if self.verbosity() > 0:
             print("Pinging database server", self.host(), "...")
@@ -99,9 +110,11 @@ class OracleDB:
                         response = True
         return response
 
+    # Returns the port number being used for the database connection.
     def port(self):
         return self.odb_port
 
+    # Shows back information about the database connection.
     def show(self):
         print("Name:", self.title(),
               "Code:", self.kind(),
@@ -112,12 +125,17 @@ class OracleDB:
               "SID:", self.sid(),
               "Name:", self.name())
 
+    # Returns the SID (system identifier) being used for the database connection.
     def sid(self):
         return self.odb_sid
 
+    # Returns  the title of the instantiated object.
     def title(self):
         return self.odb_title
 
+    # Takes a FRED series and fetched Pandas series for
+    # updating the data table for the series (via UPSERT operations).
+    # The FREDflow log is also updated.
     def upsert(self, fred_series, pandas_series):
         if self.verbosity() > 0:
             print("Loading", len(pds_series), "row(s) of",
@@ -185,9 +203,11 @@ class OracleDB:
                 cursor.execute(sql_stmt2, sql_data2)
                 connection.commit()
 
+    # Returns the user being used for the database connection.
     def user(self):
         return self.odb_user
 
+    # Returns and optionally sets the verbosity level for the object.
     def verbosity(self, v = None):
         if v is not None:
             self.odb_verbosity = v
