@@ -1,0 +1,198 @@
+-- CREATE TABLE for Federal Funds Effective Rate (DFF).
+CREATE TABLE dff (
+    release_date DATE NOT NULL ENABLE, 
+    data_value NUMBER(12,2) NOT NULL ENABLE, 
+    release_jdn NUMBER(12,0) NOT NULL ENABLE, 
+    first_created TIMESTAMP (6) DEFAULT SYSTIMESTAMP NOT NULL ENABLE, 
+    Last_Updated TIMESTAMP (6), 
+    CONSTRAINT dff_pk PRIMARY KEY (release_jdn));
+
+
+
+-- CREATE TABLE for Unemployment Rate (UNRATE).
+CREATE TABLE unrate (
+    release_date DATE NOT NULL ENABLE, 
+    data_value NUMBER(12,1) NOT NULL ENABLE, 
+    release_jdn NUMBER(12,0) NOT NULL ENABLE, 
+    cal_month_key NUMBER(6,0) NOT NULL ENABLE, 
+    first_created TIMESTAMP (6) DEFAULT SYSTIMESTAMP NOT NULL ENABLE, 
+    last_updated TIMESTAMP (6), 
+    CONSTRAINT unrate_pk PRIMARY KEY (cal_month_key));
+
+
+-- CREATE TABLE for Gross Domestic Product (GDP).
+CREATE TABLE gdp (
+    release_date DATE NOT NULL ENABLE, 
+    data_value NUMBER(12,1) NOT NULL ENABLE, 
+    release_jdn NUMBER(12,0) NOT NULL ENABLE, 
+    cal_quarter_key NUMBER(5,0) NOT NULL ENABLE, 
+    first_created TIMESTAMP (6) DEFAULT SYSTIMESTAMP NOT NULL ENABLE, 
+    last_updated TIMESTAMP (6), 
+    CONSTRAINT gdp_pk PRIMARY KEY (cal_quarter_key));
+
+
+
+-- CREATE "UPSERT" FUNCTION for daily data series.
+CREATE or REPLACE FUNCTION UPSERT_DAY_FRED_SERIES (
+    p_fred_series user_tables.table_name%TYPE,
+    p_release_date IN VARCHAR2,
+    p_data_value IN NUMBER)
+RETURN INTEGER
+-- Function to UPSERT a FRED series value using
+-- the provided release date string.
+-- An integer return value signals a row has been
+-- successfully processed (1) or not (0)
+AS
+    -- Declare local variables.
+    v_rel_sql_date DATE := NULL;
+    v_rel_jdn_date INTEGER := NULL;
+    v_return_value INTEGER := 0;
+BEGIN
+    -- Handle date parameters.
+    -- Convert date string to SQL date.
+    v_rel_sql_date := TO_DATE(p_release_date, 'YYYY-MM-DD');
+    -- Convert SQL date to Julian day number (JDN).
+    v_rel_jdn_date := TO_NUMBER(TO_CHAR(v_rel_sql_date, 'J'));
+
+    -- Do an UPSERT with UPDATE first then INSERT.
+    -- UPDATE simply overwrites the previous similarity measures.
+    EXECUTE IMMEDIATE
+        'UPDATE ' || p_fred_series || ' SET ' ||
+        'data_value = ' || p_data_value || ', ' ||
+        'last_updated = SYSTIMESTAMP ' ||
+        'WHERE release_jdn = :2'
+        USING v_rel_jdn_date;
+
+    -- If no row exists for the UPDATE do the INSERT.
+    IF SQL%ROWCOUNT = 0 THEN
+        EXECUTE IMMEDIATE
+            'INSERT INTO ' || p_fred_series ||
+            ' (release_date, data_value, release_jdn) ' ||
+            'VALUES (:2, :3, :4)'
+            USING
+                v_rel_sql_date,
+                p_data_value,
+                v_rel_jdn_date;
+        -- Add a check on the INSERT status.
+        v_return_value := 1;
+    ELSE
+        -- The UPDATE was successful.
+        v_return_value := 1;
+    END IF;
+
+    RETURN v_return_value;
+END UPSERT_DAY_FRED_SERIES;
+
+
+
+-- CREATE "UPSERT" FUNCTION for monthly data series.
+CREATE OR REPLACE FUNCTION UPSERT_MON_FRED_SERIES (
+    p_fred_series user_tables.table_name%TYPE,
+    p_release_date IN VARCHAR2,
+    p_data_value IN NUMBER)
+RETURN INTEGER
+-- Function to UPSERT a FRED series value using
+-- the provided release date string.
+-- An integer return value signals a row has been
+-- successfully processed (1) or not (0)
+AS
+    -- Declare local variables.
+    v_rel_sql_date DATE := NULL;
+    v_rel_jdn_date INTEGER := NULL;
+    v_cal_month_key INTEGER := NULL;
+    v_return_value INTEGER := 0;
+BEGIN
+    -- Handle date parameters.
+    -- Convert date string to SQL date.
+    v_rel_sql_date := TO_DATE(p_release_date, 'YYYY-MM-DD');
+    -- Convert SQL date to Julian day number (JDN).
+    v_rel_jdn_date := TO_NUMBER(TO_CHAR(v_rel_sql_date, 'J'));
+    v_cal_month_key := TO_NUMBER(
+        TO_CHAR(v_rel_sql_date, 'YYYY') || TO_CHAR(v_rel_sql_date, 'MM'));
+
+    -- Do an UPSERT with UPDATE first then INSERT.
+    -- UPDATE simply overwrites the previous similarity measures.
+    EXECUTE IMMEDIATE
+        'UPDATE ' || p_fred_series || ' SET ' ||
+        'data_value = ' || p_data_value || ', ' ||
+        'last_updated = SYSTIMESTAMP ' ||
+        'WHERE cal_month_key = :2'
+        USING v_cal_month_key;
+
+    -- If no row exists for the UPDATE do the INSERT.
+    IF SQL%ROWCOUNT = 0 THEN
+        EXECUTE IMMEDIATE
+            'INSERT INTO ' || p_fred_series ||
+            ' (release_date, data_value, release_jdn, cal_month_key) ' ||
+            'VALUES (:2, :3, :4, :5)'
+            USING
+                v_rel_sql_date,
+                p_data_value,
+                v_rel_jdn_date,
+                v_cal_month_key;
+        -- Add a check on the INSERT status.
+        v_return_value := 1;
+    ELSE
+        -- The UPDATE was successful.
+        v_return_value := 1;
+    END IF;
+
+    RETURN v_return_value;
+END UPSERT_MON_FRED_SERIES;
+
+
+
+-- CREATE "UPSERT" FUNCTION for quarterly data series.
+CREATE OR REPLACE FUNCTION UPSERT_QTR_FRED_SERIES (
+    p_fred_series user_tables.table_name%TYPE,
+    p_release_date IN VARCHAR2,
+    p_data_value IN NUMBER)
+RETURN INTEGER
+-- Function to UPSERT a FRED series value using
+-- the provided release date string.
+-- An integer return value signals a row has been
+-- successfully processed (1) or not (0)
+AS
+    -- Declare local variables.
+    v_rel_sql_date DATE := NULL;
+    v_rel_jdn_date INTEGER := NULL;
+    v_cal_quarter_key INTEGER := NULL;
+    v_return_value INTEGER := 0;
+BEGIN
+    -- Handle date parameters.
+    -- Convert date string to SQL date.
+    v_rel_sql_date := TO_DATE(p_release_date, 'YYYY-MM-DD');
+    -- Convert SQL date to Julian day number (JDN).
+    v_rel_jdn_date := TO_NUMBER(TO_CHAR(v_rel_sql_date, 'J'));
+    v_cal_quarter_key := TO_NUMBER(
+        TO_CHAR(v_rel_sql_date, 'YYYY') || TO_CHAR(v_rel_sql_date, 'Q'));
+
+    -- Do an UPSERT with UPDATE first then INSERT.
+    -- UPDATE simply overwrites the previous similarity measures.
+    EXECUTE IMMEDIATE
+        'UPDATE ' || p_fred_series || ' SET ' ||
+        'data_value = ' || p_data_value || ', ' ||
+        'last_updated = SYSTIMESTAMP ' ||
+        'WHERE cal_quarter_key = :2'
+        USING v_cal_quarter_key;
+
+    -- If no row exists for the UPDATE do the INSERT.
+    IF SQL%ROWCOUNT = 0 THEN
+        EXECUTE IMMEDIATE
+            'INSERT INTO ' || p_fred_series ||
+            ' (release_date, data_value, release_jdn, cal_quarter_key) ' ||
+            'VALUES (:2, :3, :4, :5)'
+            USING
+                v_rel_sql_date,
+                p_data_value,
+                v_rel_jdn_date,
+                v_cal_quarter_key;
+        -- Add a check on the INSERT status.
+        v_return_value := 1;
+    ELSE
+        -- The UPDATE was successful.
+        v_return_value := 1;
+    END IF;
+
+    RETURN v_return_value;
+END UPSERT_QTR_FRED_SERIES;
