@@ -20,6 +20,7 @@ CREATE TABLE unrate (
     CONSTRAINT unrate_pk PRIMARY KEY (cal_month_key));
 
 
+
 -- CREATE TABLE for Gross Domestic Product (GDP).
 CREATE TABLE gdp (
     release_date DATE NOT NULL ENABLE, 
