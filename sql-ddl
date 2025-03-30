@@ -1,3 +1,5 @@
+-- Oracle Database SQL DDL for tables and functions.
+
 -- CREATE TABLE for Federal Funds Effective Rate (DFF).
 CREATE TABLE dff (
     release_date DATE NOT NULL ENABLE, 
