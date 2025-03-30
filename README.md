@@ -53,6 +53,9 @@ pip install -r requirements.txt
    ```csv
    user,password,host,port,sid,name
    ```
+3. Use the CREATE TABLE statements in the file  `sql-ddl.txt` if needed for the target schema.
+4. Use the CREATE FUNCTION statements to compile "UPSERT" functions.
+
 Note: Set the `oracle_db_enabled` parameter in the `main.py` file to False to
 jusf fetch the data and skip database processing.
 
