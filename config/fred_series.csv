@@ -1,7 +1,4 @@
 code,name,granularity,lookback
-CPIENGSL, "Energy in US City Average",MONTHLY,60
 DFF,"Federal Funds Effective Rate",DAILY,30
 GDP,"Gross Domestic Product",QUARTERLY,90
-GFDEBTN,"Total Public Debt",QUARTERLY,90
-CORESTICKM159SFRBATL,"Sticky CPI",MONTHLY,60
 UNRATE,"Unemployment Rate",MONTHLY,60
