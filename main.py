@@ -26,6 +26,7 @@ sleep_secs = 6
 config_path = 'config/'
 data_path = 'data/'
 pickle_path = 'pickle/'
+skip_files = {'.gitkeep', '.gitignore'}
 oracle_db_enabled = True
 db_push_enabled = True
 # Temporarily omit some series such as ['DFF']
@@ -50,7 +51,7 @@ pickled_series = []
 pickled_codes = set()
 files = os.listdir(pickle_path)
 for file in files:
-    if file != '.gitkeep':
+    if file not in skip_files:
         if os.path.isfile(os.path.join(pickle_path, file)):
             with open(os.path.join(pickle_path, file), 'rb') as f:
                 pfs = pickle.load(f)
