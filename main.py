@@ -50,11 +50,12 @@ pickled_series = []
 pickled_codes = set()
 files = os.listdir(pickle_path)
 for file in files:
-    if os.path.isfile(os.path.join(pickle_path, file)):
-        with open(os.path.join(pickle_path, file), 'rb') as f:
-            pfs = pickle.load(f)
-            pickled_series.append(pfs)
-            pickled_codes.add(pfs.code())
+    if file != '.gitkeep':
+        if os.path.isfile(os.path.join(pickle_path, file)):
+            with open(os.path.join(pickle_path, file), 'rb') as f:
+                pfs = pickle.load(f)
+                pickled_series.append(pfs)
+                pickled_codes.add(pfs.code())
 if verbosity > 1:
     print(pickled_codes)
     print(pickled_series)
