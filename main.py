@@ -30,7 +30,7 @@ skip_files = {'.gitkeep', '.gitignore'}
 oracle_db_enabled = True
 db_push_enabled = True
 # Temporarily omit some series such as ['DFF']
-skip_list =[]
+skip_list = []
 
 if verbosity > 0:
     print("\nInitializing FREDflow ...")

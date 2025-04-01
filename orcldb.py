@@ -61,7 +61,7 @@ class OracleDB:
                 host=self.odb_host,
                 port=self.odb_port,
                 service_name=self.odb_name) as connection:
-            # SELECT the maximum release data as a bookmark.
+            # SELECT COUNT(*) te get a row count.
             sql_stmt = \
                 "SELECT COUNT(*) FROM " + fred_series.code()
             with connection.cursor() as cursor:
@@ -97,7 +97,7 @@ class OracleDB:
                 host=self.odb_host,
                 port=self.odb_port,
                 service_name=self.odb_name) as connection:
-            # SELECT the maximum release data as a bookmark.
+            # Use a classic Oracle DBMS test query.
             sql_stmt = "SELECT * FROM dual"
             with connection.cursor() as cursor:
                 cursor.execute(sql_stmt)
@@ -146,7 +146,7 @@ class OracleDB:
                 host=self.odb_host,
                 port=self.odb_port,
                 service_name=self.odb_name) as connection:
-            # INERT into FREDflow log with start time.
+            # INSERT into FREDflow log with start time.
             sql_stmt1 = \
                 "INSERT INTO fredflow_logs (fred_series, row_tally) " + \
                 "VALUES (:1, :2)"

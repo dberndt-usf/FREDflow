@@ -36,8 +36,8 @@ def config_fred_dict(config_path, verbosity):
 
 
 def config_fred_series(config_path, new_codes, verbosity):
-    # Read config file for FRED series granularity
-    # and return a dictionary.
+    # Read config file for FRED series granularity,
+    # instantiate FREDSeries objects and return a list.
     new_series = []
     if verbosity > 0:
         print("\nConfiguring new FRED series ...")
