@@ -120,7 +120,10 @@ for fs in fred_series:
         # Pickle the FRED series for persistence.
         with open('pickle/' + fs.code() + '.pkl', 'wb') as pkl_file:
             pickle.dump(fs, pkl_file)
-        # Write series data to CSV file.
+        # Write series data to CSV file
+        # but add some header information first.
+        ds.index.name = "date"
+        ds.name = "value"
         ds.to_csv(data_path + fs.code() + '.csv')
         # Push via UPSERT operations to the specified database.
         # Push to specified Oracle databases.
@@ -130,8 +133,11 @@ for fs in fred_series:
                 bmark = odb.bookmark(fs)
                 if bmark is not None:
                     adjusted_bmark = bmark - pd.Timedelta(days=fs.lookback())
-                    print("Bookmarks:", bmark, adjusted_bmark)
-                    odb.upsert(fs, ds[adjusted_bmark:])
+                    print("Bookmarks:", bmark, adjusted_bmark,
+                          "\nPandas Series Length:", len(ds[adjusted_bmark:]))
+                    # Process the data series if there are any rows.
+                    if len(ds[adjusted_bmark:]) > 0:
+                        odb.upsert(fs, ds[adjusted_bmark:])
                 else:
                     odb.upsert(fs, ds)
     time.sleep(sleep_secs)

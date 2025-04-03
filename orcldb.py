@@ -157,8 +157,10 @@ class OracleDB:
             # Process the pandas series row-by-row.
             row_tally = 0
             for pds_tstamp, pds_val in pandas_series.items():
-                # Convert timestamp to a date string.
-                pds_date = str(pds_tstamp)[0:10]
+                # Convert timestamp to a date string - hardened code.
+                pds_date = pds_tstamp.strftime('%Y-%m-%d')  # Guaranteed YYYY-MM-DD
+                print(f"Date: {pds_date}, Type: {type(pds_tstamp)}, "
+                      f"Value: {pds_val}")
                 sql_parameters = [fred_series.code(), pds_date, pds_val]
                 with connection.cursor() as cursor:
                     ret_val = 0
