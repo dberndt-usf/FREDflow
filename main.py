@@ -61,6 +61,10 @@ if verbosity > 1:
     print(pickled_codes)
     print(pickled_series)
 
+if verbosity > 0:
+    print("\nReconfiguring pickled FRED series ...")
+reconfig_pickled_series(config_path, pickled_series, verbosity)
+
 # Instantiate new FRED series objects.
 if verbosity > 0:
     print("\nInstantiating new FRED series ...")
@@ -72,6 +76,7 @@ if verbosity > 0:
 if len(fred_codes - pickled_codes) > 0:
     new_series = config_fred_series(config_path,
                                     fred_codes - pickled_codes,
+                                    pickled_series,
                                     verbosity)
     fred_series = pickled_series + new_series
 else:

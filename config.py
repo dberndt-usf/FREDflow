@@ -35,7 +35,8 @@ def config_fred_dict(config_path, verbosity):
 
 
 
-def config_fred_series(config_path, new_codes, verbosity):
+def config_fred_series(config_path, new_codes,
+                       pickled_series, verbosity):
     # Read config file for FRED series granularity,
     # instantiate FREDSeries objects and return a list.
     new_series = []
@@ -47,11 +48,36 @@ def config_fred_series(config_path, new_codes, verbosity):
         next(csvreader)
         for row in csvreader:
             if row[0] in new_codes:
+                # Instantiate new series object.
                 new_series.append(FREDSeries(row[0], # Code
                                              row[1], # Name
                                              row[2], # Granularity
                                              row[3])) # Lookback
     return new_series
+
+
+
+def reconfig_pickled_series(config_path, pickled_series, verbosity):
+    with open(config_path + 'fred_series.csv', 'r') as file:
+        csvreader = csv.reader(file)
+        # Skip headers on first line.
+        next(csvreader)
+        for row in csvreader:
+            # For existing series,
+            # check for parameter changes like lookback.
+            pkl_pds = None
+            for pds in pickled_series:
+                if pds.code() == row[0]: # Code
+                    pkl_pds = pds
+            if pkl_pds is not None:
+                if pkl_pds.lookback() != int(row[3]): # Lookback
+                    print("Reconfiguring", pkl_pds.code(),
+                          "lookback from", pkl_pds.lookback(),
+                          "to", row[3], "...")
+                    pkl_pds.lookback(int(row[3]))
+                else:
+                    print("No lookback parameter changes for",
+                          pkl_pds.code(), "...")
 
 
 

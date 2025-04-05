@@ -60,7 +60,9 @@ class FREDSeries:
 
     # Returns the "look back" window to be used for data that might be
     # revised by different sources.
-    def lookback(self):
+    def lookback(self, lb = None):
+        if lb is not None:
+            self.pds_lookback = lb
         return self.pds_lookback
 
     # Return the more descriptive name of the FRED series.

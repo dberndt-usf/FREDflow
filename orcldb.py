@@ -176,6 +176,12 @@ class OracleDB:
                             int,
                             sql_parameters
                     )
+                    elif fred_series.granularity() == 'WEEKLY':
+                        ret_val = cursor.callfunc(
+                            "UPSERT_WEK_FRED_SERIES",
+                            int,
+                            sql_parameters
+                    )
                     elif fred_series.granularity() == 'DAILY':
                         ret_val = cursor.callfunc(
                             "UPSERT_DAY_FRED_SERIES",
